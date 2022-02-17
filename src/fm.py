@@ -1,8 +1,19 @@
+"""FM-index exact pattern matching."""
+
 import argparse
 import sys
 
+from preprocess import (
+    preprocess,
+    load_preprocessed
+)
+from fasta import read_fasta
+from fastq import scan_reads
+from sam import ssam_record
 
-def main():
+
+def main() -> None:
+    """FM-index exact pattern matching."""
     argparser = argparse.ArgumentParser(
         description="FM-index exact pattern matching",
         usage="\n\tfm -p genome\n\tfm genome reads"
@@ -24,13 +35,21 @@ def main():
     args = argparser.parse_args()
 
     if args.p:
-        print(f"Preprocess {args.genome}")
+        preprocess(read_fasta(args.genome), args.genome.name+".fm-idx")
     else:
         # here we need the optional argument reads
         if args.reads is None:
             argparser.print_help()
             sys.exit(1)
-        print(f"Search {args.genome} for {args.reads}")
+
+        genome_searchers = load_preprocessed(args.genome.name+".fm-idx")
+        for read_name, read_seq in scan_reads(args.reads):
+            for chr_name, search in genome_searchers.items():
+                for i in search(read_seq):
+                    ssam_record(sys.stdout,
+                                read_name, chr_name,
+                                i, f"{len(read_seq)}M",
+                                read_seq)
 
 
 if __name__ == '__main__':
