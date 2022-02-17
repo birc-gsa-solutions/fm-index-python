@@ -1,26 +1,9 @@
 """Test bwt."""
 
 from test_helpers import check_matches
-from pystr import alphabet, approx, bwt, sais
-
-
-def test_bw_transform() -> None:
-    """Test transformation."""
-    x = "mississippi"
-    b, alpha, _ = bwt.burrows_wheeler_transform(x)
-    revb = bwt.reverse_burrows_wheeler_transform(b)
-    assert revb[-1] == 0  # last symbol is sentinel
-    assert alpha.revmap(revb[:-1]) == x
-
-
-def test_bw_transform_bytes() -> None:
-    """Test transformation to bytearray."""
-    x_ = "mississippi"
-    x, alpha = alphabet.Alphabet.mapped_string_with_sentinel(x_)
-    b, _ = bwt.burrows_wheeler_transform_bytes(x, alpha)
-    revb = bwt.reverse_burrows_wheeler_transform(b)
-    assert revb[-1] == 0  # last symbol is sentinel
-    assert alpha.revmap(revb[:-1]) == x_
+import alphabet
+import bwt
+import sais
 
 
 def test_ctable() -> None:
@@ -63,24 +46,3 @@ def test_mississippi() -> None:
         check_matches(x, p, matches)
     # the empty string should give us the entire x includng sentinel
     assert len(list(search(""))) == len(x) + 1
-
-
-def test_mississippi_aprox_0() -> None:
-    """Test approximative algorithm with edit 0."""
-    x = "mississippi"
-    search = bwt.approx_preprocess(x)
-    for p in ("si", "ppi", "ssi", "pip", "x"):
-        matches = list(search(p, 0))
-        print(p, matches)
-        check_matches(x, p, [idx for idx, _ in matches])
-
-
-def test_mississippi_aprox_edit() -> None:
-    """Test approximative matching."""
-    x = "mississippi"
-    search = bwt.approx_preprocess(x)
-    for edits in [1, 2, 3]:
-        for p in ("si", "ppi", "ssi", "pip", "x"):
-            for pos, cigar in search(p, edits):
-                align = approx.extract_alignment(x, p, pos, cigar)
-                assert approx.count_edits(align) <= edits
